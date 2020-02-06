@@ -6,6 +6,7 @@ import {ReposListReleasesResponse} from "@octokit/rest";
 import {app, shell} from "electron";
 import {inspect} from "util";
 import {isWebUri} from "valid-url";
+import {observableToSubscribableLike} from "electron-rpc-api";
 import {startWith, take} from "rxjs/operators";
 
 import {Context} from "src/electron-main/model";
@@ -314,8 +315,10 @@ export async function buildEndpoints(
         },
 
         notification() {
-            return IPC_MAIN_API_NOTIFICATION$.asObservable().pipe(
-                startWith(IPC_MAIN_API_NOTIFICATION_ACTIONS.Bootstrap({})),
+            return observableToSubscribableLike(
+                IPC_MAIN_API_NOTIFICATION$.asObservable().pipe(
+                    startWith(IPC_MAIN_API_NOTIFICATION_ACTIONS.Bootstrap({})),
+                )
             );
         },
     };
