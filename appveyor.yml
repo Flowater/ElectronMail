@@ -6,7 +6,7 @@
 
 branches:
   only:
-    - master
+    - issue-250
 
 skip_tags: true
 platform:
