@@ -61,25 +61,50 @@ const config = buildBaseWebConfig(
             new DefinePlugin({
                 BUILD_ANGULAR_COMPILATION_FLAGS: JSON.stringify(angularCompilationFlags),
             }),
-            new AngularCompilerPlugin({
-                contextElementDependencyConstructor: require("webpack/lib/dependencies/ContextElementDependency"),
-                tsConfigPath: tsConfigFile,
-                compilerOptions: {
-                    preserveWhitespaces: false,
-                    disableTypeScriptVersionCheck: true,
-                    strictInjectionParameters: true,
+            (() => {
+                type StrictTemplateOptions
+                    = NoExtraProperties<Required<import("@angular/compiler-cli/src/ngtsc/core/api").StrictTemplateOptions>>;
+                const strictTemplateOptions: StrictTemplateOptions = {
+                    strictAttributeTypes: true,
+                    strictContextGenerics: true,
+                    strictDomEventTypes: true,
+                    strictDomLocalRefTypes: true,
+                    strictInputTypes: true,
+                    strictNullInputTypes: true,
+                    strictOutputEventTypes: true,
+                    strictSafeNavigationTypes: true,
+                    strictTemplates: true,
+                };
+                type LegacyNgcOptions
+                    = NoExtraProperties<Required<Pick<import("@angular/compiler-cli/src/ngtsc/core/api").LegacyNgcOptions,
+                    | "fullTemplateTypeCheck"
+                    | "strictInjectionParameters">>>;
+                const legacyNgcOptions: LegacyNgcOptions = {
                     fullTemplateTypeCheck: angularCompilationFlags.aot || angularCompilationFlags.ivy,
-                    ivyTemplateTypeCheck: angularCompilationFlags.ivy,
-                    enableIvy: angularCompilationFlags.ivy,
-                    ...readConfiguration(tsConfigFile).options,
-                },
-                platform: PLATFORM.Browser,
-                skipCodeGeneration: !angularCompilationFlags.aot,
-                nameLazyFiles: true,
-                discoverLazyRoutes: true, // TODO disable "discoverLazyRoutes" once switched to Ivy renderer
-                directTemplateLoading: false,
-                entryModule: `${browserWindowAppPath("./app.module")}#AppModule`,
-            }),
+                    strictInjectionParameters: true,
+                };
+                return new AngularCompilerPlugin({
+                    contextElementDependencyConstructor: require("webpack/lib/dependencies/ContextElementDependency"),
+                    tsConfigPath: tsConfigFile,
+                    compilerOptions: {
+                        ...strictTemplateOptions,
+                        ...legacyNgcOptions,
+                        preserveWhitespaces: false,
+                        disableTypeScriptVersionCheck: true,
+                        enableIvy: angularCompilationFlags.ivy,
+                        ...readConfiguration(tsConfigFile).options,
+                        // tslint:disable-next-line:max-line-length
+                        // https://github.com/angular/angular/blob/24b2f1da2bfaa8afa6e01920d94e00574fd4d5a3/packages/compiler-cli/src/ngtsc/core/api.ts#L366-L375
+                        // ivyTemplateTypeCheck: angularCompilationFlags.ivy,
+                    },
+                    platform: PLATFORM.Browser,
+                    skipCodeGeneration: !angularCompilationFlags.aot,
+                    nameLazyFiles: true,
+                    discoverLazyRoutes: true, // TODO disable "discoverLazyRoutes" once switched to Ivy renderer
+                    directTemplateLoading: false,
+                    entryModule: `${browserWindowAppPath("./app.module")}#AppModule`,
+                });
+            })(),
         ],
         optimization: {
             splitChunks: {
